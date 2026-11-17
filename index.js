@@ -89,3 +89,13 @@ app.post('/api/chat', async (req, res) => {
                 if (!trimmedLine.startsWith('data: ')) {
                     continue;
                 }
+                const data = trimmedLine.slice(5).trim();
+
+                if (data === '[DONE]') {
+                    continue;
+                }
+
+                try {
+                    const json = JSON.parse(data);
+
+                    const content = json.choices[0].delta?.content;
