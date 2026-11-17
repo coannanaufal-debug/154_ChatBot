@@ -28,7 +28,7 @@ app.post('/api/chat', async (req, res) => {
         }));
 
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
             {
                 method: 'POST',
 
@@ -50,8 +50,16 @@ app.post('/api/chat', async (req, res) => {
 
             console.error('Gemini Error:', errorData);
 
+            let errorMessage = errorData;
+            try {
+                const parsed = JSON.parse(errorData);
+                errorMessage = parsed.error?.message || errorData;
+            } catch {
+                /* biarkan teks asli */
+            }
+
             return res.status(response.status).json({
-                error: errorData
+                error: errorMessage
             });
         }
         const data = await response.json();
@@ -63,19 +71,9 @@ app.post('/api/chat', async (req, res) => {
 
         console.error('Server Error:', error);
 
-        if (!res.headersSent) {
-            res.status(500).json({
-                error: 'Terjadi kesalahan pada server'
-            });
-            } else {
-            res.write(
-                `data: ${JSON.stringify({
-                    error: 'Terjadi kesalahan pada server'
-                })}\n\n`
-            );
-
-            res.end();
-        }
+        res.status(500).json({
+            error: 'Terjadi kesalahan pada server'
+        });
     }
 });
 app.listen(PORT, () => {
