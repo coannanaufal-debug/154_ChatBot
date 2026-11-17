@@ -54,67 +54,10 @@ app.post('/api/chat', async (req, res) => {
                 error: errorData
             });
         }
-        res.setHeader('Content-Type', 'text/event-stream');
-        res.setHeader('Cache-Control', 'no-cache');
-        res.setHeader('Connection', 'keep-alive');
+        const data = await response.json();
+        const content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-
-        let buffer = '';
-
-        while (true) {
-            const { done, value } = await reader.read();
-
-            if (done) {
-                break;
-            }
-
-            buffer += decoder.decode(value, {
-                stream: true
-            });
-              const lines = buffer.split('\n');
-
-            // Simpan bagian terakhir yang belum lengkap
-            buffer = lines.pop();
-
-            for (const line of lines) {
-
-                const trimmedLine = line.trim();
-
-                if (!trimmedLine) {
-                    continue;
-                }
-
-                if (!trimmedLine.startsWith('data: ')) {
-                    continue;
-                }
-                const data = trimmedLine.slice(5).trim();
-
-                if (data === '[DONE]') {
-                    continue;
-                }
-
-                try {
-                    const json = JSON.parse(data);
-
-                    const content = json.choices[0].delta?.content;
-                    if (content) {
-                        res.write(
-                            `data: ${JSON.stringify(content)}\n\n`
-                        );
-                    }
-
-                } catch (error) {
-                    console.error(
-                        'Gagal parsing streaming data:',
-                        error
-                    );
-                }
-            }
-        }
-        res.write('data: [DONE]\n\n');
-        res.end();
+        res.json({ content });
 
     } catch (error) {
 
